@@ -1,27 +1,59 @@
 # Policy Radar 项目
 
-政策雷达 - 政策数据管理与展示系统
+政策雷达 - 电力行业标准政策管理与展示系统
 
 ## 项目结构
 
 ```
-policy radar/
-├── backend/          # Go 后端服务
-├── frontend/         # Vue 管理后台前端
-├── frontend-h5/      # Vue H5 移动端前端
-├── Datas/            # 数据文件
-├── docs/             # 文档
-├── start.sh          # 一键启动脚本
-└── stop.sh           # 一键停止脚本
+policy-radar/
+├── frontend/               # Vue 3 前端（PC管理后台 + H5移动端）
+│   ├── src/
+│   │   ├── api/           # API 封装
+│   │   ├── components/    # 公共组件
+│   │   ├── pages/         # 页面
+│   │   │   ├── admin/     # PC管理后台页面
+│   │   │   └── mobile/    # H5移动端页面
+│   │   ├── router/        # 路由配置
+│   │   ├── stores/        # Pinia 状态管理
+│   │   └── styles/        # 样式文件
+│   └── package.json
+├── backend/                # Go 后端服务
+│   ├── cmd/server/        # 服务入口
+│   ├── internal/          # 内部代码
+│   │   ├── handler/       # HTTP 处理器
+│   │   ├── service/       # 业务逻辑
+│   │   ├── repository/    # 数据访问
+│   │   ├── model/         # 数据模型
+│   │   └── config/        # 配置
+│   ├── migrations/        # 数据库迁移脚本
+│   └── go.mod
+├── mix2.yaml              # MIX2 平台配置
+├── .mix2ignore            # 部署忽略文件
+├── start.sh               # 一键启动脚本
+└── stop.sh                # 一键停止脚本
 ```
+
+## 技术栈
+
+### 前端
+- Vue 3 + TypeScript
+- Element Plus (PC端UI)
+- Tailwind CSS
+- Pinia 状态管理
+- Vue Router
+
+### 后端
+- Go 1.21+
+- Gin 框架
+- GORM
+- SQLite / MySQL
 
 ## 服务端口
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | 后端 API | 8080 | Go 后端服务 |
-| 管理后台 | 3000 | Vue 前端管理后台 |
-| H5 前端 | 3001 | Vue H5 移动端 |
+| 前端服务 | 3000 | PC管理后台 + H5移动端 |
 
 ## 快速启动
 
@@ -37,60 +69,27 @@ policy radar/
 ./stop.sh
 ```
 
-## 单独启动/停止服务
-
-### 后端服务 (Go)
-
-```bash
-# 启动
-cd backend
-./server
-
-# 后台启动
-cd backend
-nohup ./server > server.log 2>&1 &
-
-# 停止
-kill $(lsof -ti :8080)
-```
-
-### 前端管理后台 (Vue)
-
-```bash
-# 启动
-cd frontend
-npm run dev
-
-# 后台启动
-cd frontend
-nohup npm run dev > frontend.log 2>&1 &
-
-# 停止
-kill $(lsof -ti :3000)
-```
-
-### H5 前端 (Vue)
-
-```bash
-# 启动
-cd frontend-h5
-npm run dev
-
-# 后台启动
-cd frontend-h5
-nohup npm run dev > h5.log 2>&1 &
-
-# 停止
-kill $(lsof -ti :3001)
-```
-
 ## 访问地址
 
 启动服务后，可通过以下地址访问：
 
 - **后端 API**: http://localhost:8080
-- **管理后台**: http://localhost:3000
-- **H5 前端**: http://localhost:3001
+- **PC 管理后台**: http://localhost:3000/admin/national
+- **H5 移动端**: http://localhost:3000/m/
+
+### 路由说明
+
+| 路由 | 说明 |
+|------|------|
+| `/admin/national` | 国标政策管理 |
+| `/admin/industry` | 行标政策管理 |
+| `/admin/local` | 地标政策管理 |
+| `/admin/category` | 政策分类管理 |
+| `/admin/recommend` | 推荐政策管理 |
+| `/admin/hot-update` | 政策热更新 |
+| `/admin/dashboard` | 数据看板 |
+| `/m/` | H5移动端首页 |
+| `/m/detail/:type/:id` | H5政策详情 |
 
 ## 日志查看
 
@@ -98,18 +97,15 @@ kill $(lsof -ti :3001)
 # 查看后端日志
 tail -f backend/server.log
 
-# 查看管理后台日志
+# 查看前端日志
 tail -f frontend/frontend.log
-
-# 查看 H5 前端日志
-tail -f frontend-h5/h5.log
 ```
 
 ## 查看服务状态
 
 ```bash
 # 查看所有服务端口
-lsof -i :8080 -i :3000 -i :3001 | grep LISTEN
+lsof -i :8080 -i :3000 | grep LISTEN
 ```
 
 ## 依赖环境
@@ -125,5 +121,13 @@ lsof -i :8080 -i :3000 -i :3001 | grep LISTEN
 ```bash
 # 安装前端依赖
 cd frontend && npm install
-cd ../frontend-h5 && npm install
+
+# 编译后端（如果需要）
+cd backend && go build -o server ./cmd/server
 ```
+
+## MIX2 部署
+
+本项目符合 MIX2 平台规范，可直接部署到 MIX2 平台。
+
+配置文件：`mix2.yaml`
