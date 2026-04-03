@@ -1,0 +1,43 @@
+apiVersion: mix2/v1
+kind: Application
+metadata:
+  name: policy-radar
+  version: 1.0.0
+  description: 政策雷达 - 电力行业标准政策管理系统
+
+spec:
+  runtime:
+    type: nodejs
+    version: "20"
+
+  build:
+    command: cd frontend && npm run build
+    output: frontend/dist
+
+  run:
+    command: cd frontend && npm run preview
+    port: 3000
+
+  resources:
+    cpu: "0.5"
+    memory: "512Mi"
+
+  env:
+    NODE_ENV: production
+    VITE_API_BASE_URL: /api/v1
+
+  services:
+    - name: mysql
+      type: mysql
+      version: "8.0"
+      isolation: shared
+      tablePrefix: policy_radar
+
+  migrations:
+    enabled: true
+    path: backend/migrations/
+    autoRun: true
+
+  ingress:
+    enabled: true
+    type: path
