@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>政策雷达 - 电力标准查询</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        background-color: #f7f8fa;
+        color: #333;
+        line-height: 1.6;
+      }
+
+      /* 页面容器 - 手机端 */
+      .app-container {
+        max-width: 450px;
+        margin: 0 auto;
+        background: #fff;
+        min-height: 100vh;
+      }
+
+      /* 顶部导航（统一样式） */
+      .top-nav {
+        background: #d92a2b;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #fff;
+      }
+
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-back {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+      }
+
+      .nav-title {
+        font-size: 17px;
+        font-weight: 500;
+      }
+
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .search-input {
+        width: 180px;
+        height: 28px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 14px;
+        padding: 0 12px;
+        color: #fff;
+        font-size: 13px;
+        outline: none;
+      }
+
+      .search-input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .nav-icon {
+        width: 20px;
+        height: 20px;
+        color: white;
+        cursor: pointer;
+      }
+
+      /* 标签切换 - 统一 */
+      .tab-switcher {
+        display: flex;
+        background: #fff;
+        border-bottom: 1px solid #f2f3f5;
+      }
+
+      .tab-item {
+        flex: 1;
+        text-align: center;
+        padding: 12px 0;
+        font-size: 15px;
+        color: #666;
+        position: relative;
+        cursor: pointer;
+      }
+
+      .tab-item.active {
+        color: #d92a2b;
+        font-weight: 500;
+      }
+
+      .tab-item.active::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 24px;
+        height: 3px;
+        background: #d92a2b;
+        border-radius: 2px;
+      }
+
+      /* 轮播Banner */
+      .banner-section {
+        background: linear-gradient(90deg, #d92a2b, #e53e3e);
+        color: #fff;
+        padding: 20px 16px;
+        margin: 12px 12px 16px;
+        border-radius: 10px;
+      }
+
+      .banner-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      .banner-desc {
+        font-size: 12px;
+        opacity: 0.85;
+      }
+
+      /* 列表区域 */
+      .list-section {
+        padding: 0 16px 16px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .section-more {
+        font-size: 13px;
+        color: #007aff;
+        cursor: pointer;
+      }
+
+      /* 标准卡片 */
+      .standard-card {
+        border: 1px solid #e5e6eb;
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 10px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        cursor: pointer;
+      }
+
+      .standard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .standard-code {
+        font-size: 15px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      /* 状态标签 */
+      .status-tag {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 400;
+      }
+
+      .status-current {
+        background: #e8f3ff;
+        color: #1377eb;
+      }
+
+      .status-future {
+        background: #fff4e8;
+        color: #ff7d00;
+      }
+
+      .standard-desc {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 6px;
+      }
+
+      .standard-meta {
+        font-size: 12px;
+        color: #999;
+      }
+
+      /* 分隔线 */
+      .divider {
+        height: 10px;
+        background: #f7f8fa;
+        margin: 10px -16px;
+      }
+
+      /* 分类页面布局 */
+      .main-wrapper {
+        display: flex;
+      }
+
+      .category-sidebar {
+        width: 120px;
+        background: #fff;
+        border-right: 1px solid #f2f3f5;
+      }
+
+      .category-item {
+        padding: 14px 12px;
+        font-size: 14px;
+        color: #666;
+        border-left: 3px solid transparent;
+        cursor: pointer;
+      }
+
+      .category-item.active {
+        background: #fef7f4;
+        color: #d92a2b;
+        border-left: 3px solid #d92a2b;
+        font-weight: 500;
+      }
+
+      .category-sub {
+        font-size: 12px;
+        color: #999;
+        margin-top: 2px;
+      }
+
+      .content-area {
+        flex: 1;
+        padding: 12px 0;
+      }
+
+      .list-card {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f2f3f5;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        cursor: pointer;
+      }
+
+      .list-card .title {
+        font-size: 15px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .list-card .code {
+        font-size: 14px;
+        color: #333;
+      }
+
+      .list-card .org {
+        font-size: 12px;
+        color: #d92a2b;
+      }
+
+      .list-card .date {
+        font-size: 12px;
+        color: #999;
+      }
+
+      /* 页面切换 */
+      .page {
+        display: none;
+      }
+
+      .page.active {
+        display: block;
+      }
+
+      /* ==================== 详情页样式 ==================== */
+      .detail-page {
+        padding: 16px;
+      }
+
+      /* 详情页标题区 */
+      .detail-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .detail-subtitle {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 4px;
+      }
+
+      .detail-en-title {
+        font-size: 14px;
+        color: #999;
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+
+      /* 状态标签组 */
+      .detail-tags {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f2f3f5;
+        flex-wrap: wrap;
+      }
+
+      .detail-tag {
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+
+      .detail-tag.current {
+        border: 2px solid #d92a2b;
+        background: #fff;
+        color: #d92a2b;
+        font-weight: 500;
+      }
+
+      .detail-tag.normal {
+        background: #f2f3f5;
+        color: #666;
+      }
+
+      /* 政策溯源链接标签 */
+      .policy-source-tag {
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        background: #e8f3ff;
+        color: #007aff;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* 信息网格 */
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px 0;
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #f2f3f5;
+      }
+
+      .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .info-label {
+        font-size: 13px;
+        color: #999;
+      }
+
+      .info-value {
+        font-size: 15px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      /* 详情介绍 */
+      .detail-intro {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #f2f3f5;
+      }
+
+      .intro-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 12px;
+      }
+
+      .intro-content {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.8;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* ========== Markdown 政策拆分区域 ========== */
+      .markdown-area {
+        background: #fafafa;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        line-height: 1.8;
+        color: #333;
+        white-space: pre-wrap;
+        font-family: inherit;
+      }
+
+      .split-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 12px;
+      }
+
+      /* 相关推荐 */
+      .related-section {
+        margin-bottom: 80px;
+      }
+
+      .related-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 12px;
+      }
+
+      .related-item {
+        padding: 12px 0;
+        border-bottom: 1px solid #f2f3f5;
+        cursor: pointer;
+      }
+
+      .related-item:last-child {
+        border-bottom: none;
+      }
+
+      .related-code {
+        font-size: 13px;
+        color: #999;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .related-name {
+        font-size: 15px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      /* 底部操作栏 */
+      .detail-footer {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 450px;
+        background: #fff;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-top: 1px solid #f2f3f5;
+      }
+
+      .download-btn {
+        width: 100%;
+        height: 44px;
+        background: #000;
+        color: #fff;
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .download-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- 统一顶部导航 -->
+      <div class="top-nav">
+        <div class="nav-left">
+          <svg
+            class="nav-back"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            id="backBtn"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          <div class="nav-title">政策雷达-电力</div>
+        </div>
+        <div class="nav-right">
+          <input
+            class="search-input"
+            placeholder="搜索标准编号/名称"
+            id="searchInput"
+          />
+          <svg
+            class="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            onclick="goToCategory()"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- 统一标签栏 -->
+      <div class="tab-switcher">
+        <div class="tab-item active" data-tab="0">推荐</div>
+        <div class="tab-item" data-tab="1">国标</div>
+        <div class="tab-item" data-tab="2">行标</div>
+        <div class="tab-item" data-tab="3">地方标</div>
+      </div>
+
+      <!-- 首页 -->
+      <div id="homePage" class="page active">
+        <!-- 轮播Banner -->
+        <div class="banner-section">
+          <div class="banner-title">2024电力现货市场深化运行指引发布</div>
+          <div class="banner-desc">
+            关于进一步完善电力现货市场规则，推动新能源参与市场交易的若干意见...
+          </div>
+        </div>
+
+        <!-- 国标 -->
+        <div class="list-section">
+          <div class="section-header">
+            <span>国标 - 电力 (GB)</span>
+            <span class="section-more" onclick="goToCategory()">更多</span>
+          </div>
+          <div class="standard-card" onclick="goToDetail()">
+            <div class="standard-header">
+              <span class="standard-code">GB/T 42315-2023</span>
+              <span class="status-tag status-current">现行</span>
+            </div>
+            <div class="standard-desc">新型电力系统配电网技术导则</div>
+            <div class="standard-meta">市监总局/标委会 · 2023-12-01</div>
+          </div>
+          <div class="standard-card" onclick="goToDetail()">
+            <div class="standard-header">
+              <span class="standard-code">GB/T 31464-2023</span>
+              <span class="status-tag status-current">现行</span>
+            </div>
+            <div class="standard-desc">分布式光伏发电系统接入电网技术规范</div>
+            <div class="standard-meta">国家能源局 · 2025-12-18</div>
+          </div>
+          <div class="standard-card" onclick="goToDetail()">
+            <div class="standard-header">
+              <span class="standard-code">GB/T 45905.5-2025</span>
+              <span class="status-tag status-future">即将实施</span>
+            </div>
+            <div class="standard-desc">
+              电力现货市场运营 第5部分：新能源交易
+            </div>
+            <div class="standard-meta">国家标准化管理委员会 · 2026-02-18</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 行标 -->
+        <div class="list-section">
+          <div class="section-header">
+            <span>行标 - 电力 (DL)</span>
+            <span class="section-more" onclick="goToCategory()">更多</span>
+          </div>
+          <div class="standard-card" onclick="goToDetail()">
+            <div class="standard-header">
+              <span class="standard-code">DL/T 5566-2021</span>
+              <span class="status-tag status-current">现行</span>
+            </div>
+            <div class="standard-desc">电力工程电缆设计标准</div>
+            <div class="standard-meta">国家能源局 · 2022-05-01</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分类页面 -->
+      <div id="categoryPage" class="page">
+        <div class="main-wrapper">
+          <div class="category-sidebar">
+            <div class="category-item active">储能标准</div>
+            <div class="category-item">
+              自动化通信标准
+              <div class="category-sub">(IEC 61850系列)</div>
+            </div>
+            <div class="category-item">现货市场标准</div>
+            <div class="category-item">电力工程标准</div>
+          </div>
+
+          <div class="content-area">
+            <div class="list-card" onclick="goToDetail()">
+              <div class="code">
+                GB/T 42315-2023
+                <span class="status-tag status-current" style="float: right"
+                  >现行</span
+                >
+              </div>
+              <div class="title">新型电力系统配电网技术导则</div>
+              <div class="org">市监总局/标委会</div>
+              <div class="date">2023-12-01</div>
+            </div>
+            <div class="list-card" onclick="goToDetail()">
+              <div class="code">
+                GB/T 31464 · 2023.11.01
+                <span class="status-tag status-current" style="float: right"
+                  >现行</span
+                >
+              </div>
+              <div class="title">分布式光伏发电系统接网技术规范</div>
+              <div class="org">国家能源局</div>
+              <div class="date">2025-12-18</div>
+            </div>
+            <div class="list-card" onclick="goToDetail()">
+              <div class="code">
+                GB/T 45905.5-2025
+                <span class="status-tag status-future" style="float: right"
+                  >即将实施</span
+                >
+              </div>
+              <div class="title">电力现货市场运营 第5部分：新能源交易</div>
+              <div class="org">国家标准化管理委员会</div>
+              <div class="date">2026-02-18</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 详情页面 -->
+      <div id="detailPage" class="page">
+        <div class="detail-page">
+          <!-- 标题区 -->
+          <div class="detail-title">新型电力系统配电网技术导则</div>
+          <div class="detail-subtitle">GB/T 42315-2023</div>
+          <div class="detail-en-title">
+            Technical Guidelines for Distribution Networks in New Power Systems
+          </div>
+
+          <!-- 状态标签 + 新增：政策溯源链接 -->
+          <div class="detail-tags">
+            <div class="detail-tag current">现行</div>
+            <div class="detail-tag normal" id="implementDurationTag">
+              加载中...
+            </div>
+            <div class="detail-tag normal">2023-12-01 实施</div>
+            <div class="detail-tag normal">国家标准</div>
+            <!-- 政策溯源链接（可修改href跳转地址） -->
+            <a
+              href="https://www.gov.cn"
+              target="_blank"
+              class="policy-source-tag"
+              >政策溯源 ↗</a
+            >
+          </div>
+
+          <!-- 信息网格 -->
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">标准分类</div>
+              <div class="info-value">电力工程/配电</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">GB 分类号</div>
+              <div class="info-value">F20/29</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">IEC 分类号</div>
+              <div class="info-value">29.240.01</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">发布机构</div>
+              <div class="info-value">市监总局/标委会</div>
+            </div>
+          </div>
+
+          <!-- 详情介绍 -->
+          <div class="detail-intro">
+            <div class="intro-title">标准详情简介</div>
+            <div class="intro-content">
+              <p>
+                本文件确立了新型电力系统配电网的总体原则，规定了规划设计、运行控制、继电保护、自动化与通信、分布式电源接入、储能接入及电动汽车充电设施接入等技术要求。
+              </p>
+              <p>
+                适用于交流额定电压为110kV及以下的新建、扩建和改建配电网。旨在支撑能源结构转型，提升配电网对高比例新能源的接纳能力与安全稳定运行水平。
+              </p>
+              <p>
+                在核心技术条款中，明确了柔性直流技术在配电网中的应用规范，并针对虚拟电厂（VPP）的协同控制提出了具体的接口参数要求。
+              </p>
+            </div>
+          </div>
+
+          <!-- Markdown 格式政策拆分 -->
+          <div class="split-title">政策拆分</div>
+          <div class="markdown-area">
+            # 政策拆分分析 ## 1. 核心定位
+            本标准是新型电力系统配电网建设的顶层技术规范，全面支撑新能源高渗透场景下的配网安全运行。
+            ## 2. 技术突破
+            首次将柔性直流、虚拟电厂、储能协同控制纳入配电网标准体系，填补了新型配网技术应用空白。
+            ## 3. 适用范围
+            覆盖110kV及以下全电压等级，强制适用于新建/扩建/改建配电网工程，具备强约束力。
+            ## 4. 行业影响
+            推动配电网从“被动供电”向“主动协同”转型，加速分布式光伏、储能、充电桩的规模化接入。
+            ## 5. 实施价值
+            提升电网消纳能力、降低供电损耗、提高供电可靠性，为双碳目标提供配网侧技术支撑。
+          </div>
+
+          <!-- 相关推荐 -->
+          <div class="related-section">
+            <div class="related-title">相关推荐</div>
+            <div class="related-item" onclick="goToDetail()">
+              <div class="related-code">
+                DL/T 5786-2023 <span>2024.01</span>
+              </div>
+              <div class="related-name">分布式光伏接入配电网运行控制规程</div>
+            </div>
+            <div class="related-item" onclick="goToDetail()">
+              <div class="related-code">
+                发改能源〔2023〕1452号 <span>2023.11</span>
+              </div>
+              <div class="related-name">
+                关于加快推进新型电力系统建设的指导意见
+              </div>
+            </div>
+            <div class="related-item" onclick="goToDetail()">
+              <div class="related-code">
+                T/CEC 890-2023 <span>2023.09</span>
+              </div>
+              <div class="related-name">微电网群协同控制技术要求</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部操作栏：只保留下载按钮 -->
+        <div class="detail-footer">
+          <div class="download-btn">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>下载</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 页面切换逻辑
+      const homePage = document.getElementById("homePage");
+      const categoryPage = document.getElementById("categoryPage");
+      const detailPage = document.getElementById("detailPage");
+      const backBtn = document.getElementById("backBtn");
+      const tabs = document.querySelectorAll(".tab-item");
+      const topSearch = document.querySelector(".search-input");
+      const topSearchIcon = document.querySelector(".nav-icon");
+
+      // 切换到分类页
+      function goToCategory() {
+        homePage.classList.remove("active");
+        detailPage.classList.remove("active");
+        categoryPage.classList.add("active");
+
+        // 显示搜索
+        topSearch.style.display = "block";
+        topSearchIcon.style.display = "flex";
+
+        // 自动切换到国标标签
+        tabs.forEach((t) => t.classList.remove("active"));
+        tabs[1].classList.add("active");
+      }
+
+      // 切换到详情页
+      function goToDetail() {
+        homePage.classList.remove("active");
+        categoryPage.classList.remove("active");
+        detailPage.classList.add("active");
+
+        // 隐藏标签栏 + 隐藏搜索框
+        document.querySelector(".tab-switcher").style.display = "none";
+        topSearch.style.display = "none";
+        topSearchIcon.style.display = "none";
+
+        // 计算并显示实施时长
+        calculateImplementDuration();
+      }
+
+      // 返回上一页
+      backBtn.addEventListener("click", function () {
+        // 恢复标签栏 + 恢复搜索
+        document.querySelector(".tab-switcher").style.display = "flex";
+        topSearch.style.display = "block";
+        topSearchIcon.style.display = "flex";
+
+        // 根据当前活跃标签返回对应页面
+        const activeTab = document.querySelector(".tab-item.active");
+        const tabIndex = activeTab.dataset.tab;
+
+        detailPage.classList.remove("active");
+        if (tabIndex === "0") {
+          homePage.classList.add("active");
+        } else {
+          categoryPage.classList.add("active");
+        }
+      });
+
+      // 标签切换
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", function () {
+          tabs.forEach((t) => t.classList.remove("active"));
+          this.classList.add("active");
+
+          // 切换标签时恢复页面
+          document.querySelector(".tab-switcher").style.display = "flex";
+          topSearch.style.display = "block";
+          topSearchIcon.style.display = "flex";
+          detailPage.classList.remove("active");
+
+          if (this.dataset.tab === "0") {
+            homePage.classList.add("active");
+            categoryPage.classList.remove("active");
+          } else {
+            categoryPage.classList.add("active");
+            homePage.classList.remove("active");
+          }
+        });
+      });
+
+      // 搜索框回车跳转
+      document
+        .getElementById("searchInput")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            goToCategory();
+          }
+        });
+
+      // ==================== 智能计算：年+月+天 ====================
+      function calculateImplementDuration() {
+        const implementDateStr = "2023-12-01";
+        const implementDate = new Date(implementDateStr);
+        const now = new Date();
+
+        let years = now.getFullYear() - implementDate.getFullYear();
+        let months = now.getMonth() - implementDate.getMonth();
+        let days = now.getDate() - implementDate.getDate();
+
+        if (days < 0) {
+          months--;
+          const lastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+          days += lastMonth.getDate();
+        }
+        if (months < 0) {
+          years--;
+          months += 12;
+        }
+
+        let resultText = "";
+        if (years > 0) {
+          resultText = `已实施 ${years}年${months}个月${days}天`;
+        } else {
+          resultText = `已实施 ${months}个月${days}天`;
+        }
+
+        document.getElementById("implementDurationTag").innerText = resultText;
+      }
+    </script>
+  </body>
+</html>
+

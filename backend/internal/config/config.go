@@ -1,10 +1,13 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -17,6 +20,11 @@ type Config struct {
 }
 
 func Load() *Config {
+	// 加载 .env 文件
+	if err := godotenv.Load(); err != nil {
+		log.Println("未找到 .env 文件，使用系统环境变量")
+	}
+
 	cfg := &Config{
 		ServerAddr: getEnv("SERVER_ADDR", ":8080"),
 		DBType:     getEnv("DB_TYPE", "sqlite"),
@@ -37,6 +45,33 @@ func InitDB(cfg *Config) *gorm.DB {
 	var err error
 
 	if cfg.DBType == "mysql" {
+		// 解析连接字符串获取数据库名
+		dbName := extractDatabaseName(cfg.DBPath)
+		if dbName == "" {
+			log.Fatalf("无法从连接字符串解析数据库名")
+		}
+
+		// 构建不带数据库名的连接字符串
+		baseDSN := strings.Replace(cfg.DBPath, "/"+dbName, "/", 1)
+
+		// 先连接到 MySQL 服务器（不指定数据库）
+		baseDB, err := gorm.Open(mysql.Open(baseDSN), &gorm.Config{})
+		if err != nil {
+			log.Fatalf("MySQL 服务器连接失败: %v", err)
+		}
+
+		// 创建数据库（如果不存在）
+		createDBSQL := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", dbName)
+		if err = baseDB.Exec(createDBSQL).Error; err != nil {
+			log.Fatalf("数据库创建失败: %v", err)
+		}
+		log.Printf("数据库 '%s' 已准备好", dbName)
+
+		// 关闭基础连接
+		sqlDB, _ := baseDB.DB()
+		sqlDB.Close()
+
+		// 连接到目标数据库
 		db, err = gorm.Open(mysql.Open(cfg.DBPath), &gorm.Config{})
 	} else {
 		db, err = gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{})
@@ -47,6 +82,26 @@ func InitDB(cfg *Config) *gorm.DB {
 	}
 
 	return db
+}
+
+// extractDatabaseName 从 MySQL 连接字符串中提取数据库名
+// DSN 格式: user:password@tcp(host:port)/dbname?params
+func extractDatabaseName(dsn string) string {
+	// 找到 / 后面的部分
+	idx := strings.Index(dsn, "/")
+	if idx == -1 {
+		return ""
+	}
+
+	// 获取 / 后面的字符串
+	rest := dsn[idx+1:]
+
+	// 去掉问号后面的参数部分
+	if qIdx := strings.Index(rest, "?"); qIdx != -1 {
+		rest = rest[:qIdx]
+	}
+
+	return rest
 }
 
 func CORS() gin.HandlerFunc {
